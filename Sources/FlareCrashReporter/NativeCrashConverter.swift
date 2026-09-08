@@ -58,20 +58,19 @@
                 "os.type": "darwin",
                 "os.version": .string(system.operatingSystemVersion ?? "unknown"),
             ]
-            // Older reports have no memory snapshot. An explicit device object prevents
+            // Older reports have no memory snapshot. An explicit application object prevents
             // the client's fresh, post-restart memory reading from being attributed to that crash.
             var device: [String: FlareValue] = [:]
             if case .object(let captured) = capturedDiagnostics { device = captured }
             if let model = crash.machineInfo?.modelName { device["model"] = .string(model) }
-            attributes["context.device"] = .object(device)
+            var applicationContext = FlareDiagnostics.applicationContext(from: device)
             if let application = crash.applicationInfo {
                 attributes["service.version"] = .string(
                     application.applicationMarketingVersion ?? application.applicationVersion ?? "unknown")
-                attributes["context.application"] = .object([
-                    "identifier": .string(application.applicationIdentifier ?? "unknown"),
-                    "build": .string(application.applicationVersion ?? "unknown"),
-                ])
+                applicationContext["identifier"] = .string(application.applicationIdentifier ?? "unknown")
+                applicationContext["build"] = .string(application.applicationVersion ?? "unknown")
             }
+            attributes["context.application"] = .object(applicationContext)
             if let processor = system.processorInfo {
                 switch processor.type {
                 case 0x0100_000C: attributes["host.arch"] = "arm64"

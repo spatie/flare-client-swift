@@ -6,6 +6,33 @@ import Foundation
 
 /// Device facts and a timestamped memory estimate. No host name or unique hardware identifier is read.
 public enum FlareDiagnostics {
+    package static func applicationContext(from snapshot: [String: FlareValue]) -> [String: FlareValue] {
+        var context = snapshot
+        for (rawKey, displayKey) in [
+            ("memory_total_bytes", "memory_total"),
+            ("memory_available_estimate_bytes", "memory_available_estimate"),
+        ] {
+            let raw = context.removeValue(forKey: rawKey)
+            if case .integer(let bytes) = raw, let readable = readableBytes(bytes) {
+                context[displayKey] = .string(readable)
+            }
+        }
+        return context
+    }
+
+    static func readableBytes(_ bytes: Int64) -> String? {
+        guard bytes >= 0 else { return nil }
+        guard bytes >= 1024 else { return "\(bytes) B" }
+        let units = ["B", "KB", "MB", "GB", "TB", "PB", "EB"]
+        var amount = Double(bytes)
+        var unit = 0
+        while amount >= 1024, unit < units.count - 1 {
+            amount /= 1024
+            unit += 1
+        }
+        return String(format: "%.2f", locale: Locale(identifier: "en_US_POSIX"), amount) + " " + units[unit]
+    }
+
     public static func deviceContext() -> [String: FlareValue] {
         var context: [String: FlareValue] = [
             "os_version": .string(ProcessInfo.processInfo.operatingSystemVersionString),

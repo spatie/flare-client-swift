@@ -4,6 +4,27 @@ import Testing
 @testable import Flare
 
 struct FlareDiagnosticsTests {
+    @Test func memoryFormattingUsesReadableUnitsWithTwoDecimalPlaces() {
+        #expect(FlareDiagnostics.readableBytes(3_690_988) == "3.52 MB")
+        #expect(FlareDiagnostics.readableBytes(1_342_177_280) == "1.25 GB")
+        #expect(FlareDiagnostics.readableBytes(51_539_607_552) == "48.00 GB")
+        #expect(FlareDiagnostics.readableBytes(0) == "0 B")
+        #expect(FlareDiagnostics.readableBytes(-1) == nil)
+    }
+
+    @Test func applicationContextDisplaysMemoryAndRetainsItsSamplingTime() {
+        let context = FlareDiagnostics.applicationContext(from: [
+            "model": "Mac16,1", "memory_total_bytes": 51_539_607_552,
+            "memory_available_estimate_bytes": 1_342_177_280, "memory_sampled_at": "before-crash",
+        ])
+        #expect(context["memory_total"] == "48.00 GB")
+        #expect(context["memory_available_estimate"] == "1.25 GB")
+        #expect(context["memory_sampled_at"] == "before-crash")
+        #expect(context["memory_total_bytes"] == nil)
+        #expect(context["memory_available_estimate_bytes"] == nil)
+        #expect(context["model"] == "Mac16,1")
+    }
+
     @Test func deviceSnapshotContainsTotalMemoryAndSamplingTime() {
         let snapshot = FlareDiagnostics.deviceContext()
         #expect(snapshot["memory_total_bytes"] == .integer(Int64(ProcessInfo.processInfo.physicalMemory)))

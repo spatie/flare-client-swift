@@ -6,7 +6,7 @@ import Foundation
 
 /// A reusable, concurrency-safe client. Each send makes a single HTTP request.
 public struct FlareClient: Sendable {
-    public static let version = "0.1.1"
+    public static let version = "0.1.2"
 
     private let configuration: FlareConfiguration
     private let transport: any HTTPTransport
@@ -99,7 +99,7 @@ public struct FlareClient: Sendable {
 
     private var defaultAttributes: [String: FlareValue] {
         var attributes: [String: FlareValue] = [
-            "context.device": .object(FlareDiagnostics.deviceContext()),
+            "context.application": .object(FlareDiagnostics.applicationContext(from: FlareDiagnostics.deviceContext())),
             "service.name": .string(configuration.applicationName),
             "service.stage": .string(configuration.environment),
             "flare.entry_point.type": "cli",

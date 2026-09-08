@@ -2,6 +2,11 @@
 
 All notable changes to `flare-client-swift` will be documented in this file.
 
+## 0.1.2 - 2026-09-08
+
+- Display device diagnostics in Flare's Application context alongside application identity and build information.
+- Format memory amounts as readable KB, MB and GB values with two decimal places. Keep raw byte counts in local snapshots.
+
 ## 0.1.1 - 2026-09-08
 
 - Include device model, total RAM and a timestamped estimate of available system memory in device context on Apple platforms.

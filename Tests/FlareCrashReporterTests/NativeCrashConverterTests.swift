@@ -18,11 +18,11 @@
             #expect(report.grouping == .fullStacktraceAndExceptionClassAndCode)
             #expect(report.context["native_crash"] != nil)
             #expect(report.attributes["os.version"] != nil)
-            guard case .object(let device) = report.attributes["context.device"] else {
+            guard case .object(let device) = report.attributes["context.application"] else {
                 Issue.record("Expected device context for a legacy native report")
                 return
             }
-            #expect(device["memory_available_estimate_bytes"] == nil)
+            #expect(device["memory_available_estimate"] == nil)
             #expect(device["model"] != nil)
         }
 
@@ -48,12 +48,13 @@
             )
             let data = try recorder.generateLiveReportAndReturnError()
             let report = try NativeCrashConverter.convert(StoredCrash(id: UUID(), data: data))
-            guard case .object(let device) = report.attributes["context.device"] else {
+            guard case .object(let device) = report.attributes["context.application"] else {
                 Issue.record("Missing captured diagnostics")
                 return
             }
-            #expect(device["memory_total_bytes"] == 1234)
-            #expect(device["memory_available_estimate_bytes"] == 456)
+            #expect(device["memory_total"] == "1.21 KB")
+            #expect(device["memory_available_estimate"] == "456 B")
+            #expect(device["memory_total_bytes"] == nil)
             #expect(device["memory_sampled_at"] == "before-crash")
             #expect(report.context["screen"] == "workspace")
             #expect(report.context[CrashContext.diagnosticsKey] == nil)

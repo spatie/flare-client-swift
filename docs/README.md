@@ -35,7 +35,7 @@ Add the package to `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/spatie/flare-client-swift.git", from: "0.1.1"),
+    .package(url: "https://github.com/spatie/flare-client-swift.git", from: "0.1.2"),
 ],
 targets: [
     .executableTarget(
@@ -113,13 +113,13 @@ This replaces the snapshot captured with a future crash. Ordinary client context
 
 ### Device and memory diagnostics
 
-Reports include a `context.device` group with the OS, architecture, model identifier (such as `Mac16,1`), total RAM in bytes, and a timestamped memory sample. Model identifiers and the available-memory estimate are collected on Apple platforms; unsupported readings are omitted. Host names, serial numbers and unique hardware identifiers are not collected.
+Reports display these diagnostics in Flare's Application context (`context.application`): OS, architecture, model identifier (such as `Mac16,1`), total RAM, and a timestamped memory sample. Memory values use readable units such as `48.00 GB` and `3.52 MB`, with two decimal places and 1,024 bytes per KB. Model identifiers and the available-memory estimate are collected on Apple platforms; unsupported readings are omitted. Host names, serial numbers and unique hardware identifiers are not collected.
 
-On Apple platforms, `memory_available_estimate_bytes` is free plus inactive VM pages. It is an estimate of system memory availability, not an allocation guarantee or an app memory limit. Speculative pages are already counted as free and are not counted twice. `memory_available_method` identifies the calculation, and `memory_sampled_at` records when it was taken.
+On Apple platforms, `memory_available_estimate` is free plus inactive VM pages. It is an estimate of system memory availability, not an allocation guarantee or an app memory limit. Speculative pages are already counted as free and are not counted twice. `memory_available_method` identifies the calculation, and `memory_sampled_at` records when it was taken. Raw byte counts remain in the local snapshot and the `FlareDiagnostics.deviceContext()` API; they are formatted before transmission.
 
 Handled reports sample when they are prepared. Native capture refreshes the saved snapshot every 30 seconds while the app is running, and whenever `setContext` is called. No memory query or encoding runs in the crash handler. The snapshot can be older after a hang or sleep; use its timestamp. The SDK does not substitute memory readings from after restart for a missing crash-time snapshot.
 
-You can call `try crashes.refreshDiagnostics()` to request a fresh snapshot before a critical operation. The `beforeSend` hook can remove `report.attributes["context.device"]` if you do not want to send these diagnostics.
+You can call `try crashes.refreshDiagnostics()` to request a fresh snapshot before a critical operation. The `beforeSend` hook can edit or remove `report.attributes["context.application"]` if you do not want to send these diagnostics.
 
 ## Reporting errors and supplied frames
 
