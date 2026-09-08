@@ -16,6 +16,13 @@
             }
 
             let processPath = crash.processInfo?.processPath
+            let images = (crash.images as? [PLCrashReportBinaryImageInfo]) ?? []
+            let applicationPath = applicationImagePath(
+                imagePaths: images.compactMap(\.imageName),
+                processPath: processPath,
+                processName: crash.processInfo?.processName
+            )
+            let applicationImage = images.first { $0.imageName == applicationPath }
             let frames = (crashedThread.stackFrames as? [PLCrashReportStackFrameInfo]) ?? []
             let stacktrace = frames.map { frame -> FlareStackFrame in
                 let image = crash.image(forAddress: frame.instructionPointer)
@@ -24,7 +31,7 @@
                 return FlareStackFrame(
                     file: imageName,
                     method: frame.symbolInfo?.symbolName ?? offset.map { "\(imageName) + \(hex($0))" } ?? "unknown",
-                    isApplicationFrame: image?.imageName != nil && image?.imageName == processPath
+                    isApplicationFrame: applicationPath != nil && image?.imageName == applicationPath
                 )
             }
 
@@ -32,8 +39,6 @@
             if let data = crash.customData {
                 context = (try? JSONDecoder().decode([String: FlareValue].self, from: data)) ?? [:]
             }
-            let images = (crash.images as? [PLCrashReportBinaryImageInfo]) ?? []
-            let applicationImage = images.first { $0.imageName == processPath }
             context["native_crash"] = .object([
                 "signal": .string(signal.name ?? "unknown"),
                 "signal_code": .string(signal.code ?? "unknown"),
@@ -82,6 +87,15 @@
                 occurredAt: timestamp,
                 id: stored.id
             )
+        }
+
+        static func applicationImagePath(imagePaths: [String], processPath: String?, processName: String?) -> String? {
+            if let processPath, imagePaths.contains(processPath) { return processPath }
+            let names = Set([processPath, processName].compactMap { $0 }.map { basename($0) })
+            // SwiftPM executables may be launched through .build/debug symlinks. Only
+            // use a basename match when it identifies a single image unambiguously.
+            let matches = imagePaths.filter { names.contains(basename($0)) }
+            return matches.count == 1 ? matches.first : nil
         }
 
         private static func imageContext(_ image: PLCrashReportBinaryImageInfo) -> FlareValue {
