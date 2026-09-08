@@ -2,7 +2,9 @@
 
 All notable changes to `flare-client-swift` will be documented in this file.
 
-## 0.1.2 - 2026-09-08
+## 1.0.0 - 2026-09-08
+
+- Release the stable reporting and native crash capture API.
 
 - Display device diagnostics in Flare's Application context alongside application identity and build information.
 - Format memory amounts as readable KB, MB and GB values with two decimal places. Keep raw byte counts in local snapshots.

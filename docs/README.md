@@ -35,7 +35,7 @@ Add the package to `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/spatie/flare-client-swift.git", from: "0.1.2"),
+    .package(url: "https://github.com/spatie/flare-client-swift.git", from: "1.0.0"),
 ],
 targets: [
     .executableTarget(
