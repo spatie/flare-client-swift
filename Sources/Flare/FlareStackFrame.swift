@@ -27,4 +27,14 @@ public struct FlareStackFrame: Codable, Sendable, Equatable {
         case file, lineNumber, method, isApplicationFrame, codeSnippet
         case className = "class"
     }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(file, forKey: .file)
+        try container.encode(lineNumber, forKey: .lineNumber)
+        try container.encode(method, forKey: .method)
+        try container.encode(className, forKey: .className)
+        try container.encode(isApplicationFrame, forKey: .isApplicationFrame)
+        try container.encodeIfPresent(codeSnippet, forKey: .codeSnippet)
+    }
 }

@@ -33,6 +33,7 @@
                 context = (try? JSONDecoder().decode([String: FlareValue].self, from: data)) ?? [:]
             }
             let images = (crash.images as? [PLCrashReportBinaryImageInfo]) ?? []
+            let applicationImage = images.first { $0.imageName == processPath }
             context["native_crash"] = .object([
                 "signal": .string(signal.name ?? "unknown"),
                 "signal_code": .string(signal.code ?? "unknown"),
@@ -72,6 +73,8 @@
             return FlareReport(
                 exceptionClass: exceptionName,
                 message: message,
+                code: applicationImage?.imageUUID,
+                grouping: .fullStacktraceAndExceptionClassAndCode,
                 handled: false,
                 stacktrace: stacktrace,
                 context: context,

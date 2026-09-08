@@ -3,6 +3,8 @@ import Foundation
 struct FlarePayload: Encodable {
     var exceptionClass: String
     var message: String
+    var code: String?
+    var overriddenGrouping: FlareGrouping?
     var seenAtUnixNano: Int64
     var trackingUuid: String
     var handled: Bool
@@ -21,6 +23,11 @@ struct FlarePayload: Encodable {
         }
         exceptionClass = report.exceptionClass
         message = report.message
+        guard (report.code?.count ?? 0) <= 64 else {
+            throw FlareClientError.invalidReport("The exception code cannot exceed 64 characters.")
+        }
+        code = report.code
+        overriddenGrouping = report.grouping
         seenAtUnixNano = try Self.nanoseconds(report.occurredAt)
         trackingUuid = report.id.uuidString.lowercased()
         handled = report.handled

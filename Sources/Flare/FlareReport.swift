@@ -5,6 +5,8 @@ public struct FlareReport: Codable, Sendable, Equatable {
     public var occurredAt: Date
     public var exceptionClass: String
     public var message: String
+    public var code: String?
+    public var grouping: FlareGrouping?
     public var handled: Bool
     public var stacktrace: [FlareStackFrame]
     public var context: [String: FlareValue]
@@ -14,6 +16,8 @@ public struct FlareReport: Codable, Sendable, Equatable {
     public init(
         exceptionClass: String,
         message: String,
+        code: String? = nil,
+        grouping: FlareGrouping? = nil,
         handled: Bool = true,
         stacktrace: [FlareStackFrame] = [],
         context: [String: FlareValue] = [:],
@@ -26,6 +30,8 @@ public struct FlareReport: Codable, Sendable, Equatable {
         self.occurredAt = occurredAt
         self.exceptionClass = exceptionClass
         self.message = message
+        self.code = code
+        self.grouping = grouping
         self.handled = handled
         self.stacktrace = stacktrace
         self.context = context

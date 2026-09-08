@@ -98,6 +98,8 @@ Native reports contain the crashed thread's frames, other threads, binary UUIDs,
 
 Keep the matching binary and dSYM for every release. Source-level symbolication is a separate step; this package does not upload dSYMs or provide a symbol server. Once you have symbolicated a report, you can send its source frames through `FlareReport`. Binary UUIDs and addresses are in the `native_crash` custom context for this purpose.
 
+Native crashes override the default grouping with the full stack trace, exception class, and application binary UUID. Binary-relative offsets stay stable across address randomization. Different stack locations and different builds stay distinguishable even when source line numbers are unavailable. You can also set `grouping` and `code` on a manually created `FlareReport`.
+
 ### Updating crash context
 
 ```swift

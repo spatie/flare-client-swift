@@ -93,6 +93,25 @@ struct FlareClientTests {
         #expect(await transport.requests.isEmpty)
     }
 
+    @Test func nativeGroupingPreservesOffsetsAndEncodesNullableFrameFields() throws {
+        let report = FlareReport(
+            exceptionClass: "SIGABRT",
+            message: "Native crash",
+            code: "binary-uuid",
+            grouping: .fullStacktraceAndExceptionClassAndCode,
+            handled: false,
+            stacktrace: [.init(file: "MyApp", method: "MyApp + 0x1234")]
+        )
+        let data = try JSONEncoder().encode(FlarePayload(report: report))
+        let payload = try #require(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect(payload["overriddenGrouping"] as? String == "full_stacktrace_and_exception_class_and_code")
+        #expect(payload["code"] as? String == "binary-uuid")
+        let frames = try #require(payload["stacktrace"] as? [[String: Any]])
+        #expect(frames.first?["class"] is NSNull)
+        #expect(frames.first?["method"] as? String == "MyApp + 0x1234")
+        #expect(payload["openFrameIndex"] as? Int == 0)
+    }
+
     @Test func publicReportingReturnsFailuresInsteadOfThrowing() async {
         let transport = RecordingTransport(status: 500)
         let client = FlareClient(configuration: configuration, transport: transport)
