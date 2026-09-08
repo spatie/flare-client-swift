@@ -14,6 +14,9 @@
         private let convert: @Sendable (StoredCrash) throws -> FlareReport
         private var started = false
         private var uploading = false
+        private var userContext: [String: FlareValue] = [:]
+        private var diagnosticsTask: Task<Void, Never>?
+        private let diagnostics: () -> [String: FlareValue]
 
         public convenience init(
             client: FlareClient,
@@ -45,7 +48,8 @@
             directory: URL,
             maximumPendingReports: Int = 20,
             send: @escaping @Sendable (FlareReport) async throws -> UUID?,
-            convert: @escaping @Sendable (StoredCrash) throws -> FlareReport
+            convert: @escaping @Sendable (StoredCrash) throws -> FlareReport,
+            diagnostics: @escaping () -> [String: FlareValue] = FlareDiagnostics.deviceContext
         ) throws {
             guard maximumPendingReports > 0, directory.isFileURL else {
                 throw FlareCrashReporterError.invalidConfiguration
@@ -54,6 +58,7 @@
             store = CrashStore(directory: directory, maximumReports: maximumPendingReports)
             self.send = send
             self.convert = convert
+            self.diagnostics = diagnostics
         }
 
         /// Saves the previous crash before enabling capture. Never installs a network crash callback.
@@ -66,13 +71,29 @@
             try recorder.enable()
             started = true
             Self.activeReporter = self
+            diagnosticsTask = Task { [weak self] in
+                while !Task.isCancelled {
+                    do {
+                        try await Task.sleep(nanoseconds: 30_000_000_000)
+                    } catch {
+                        return
+                    }
+                    // Retain the last valid snapshot if a refresh cannot be encoded.
+                    try? self?.refreshDiagnostics()
+                }
+            }
         }
 
         /// Replaces the context snapshot that PLCrashReporter will write if the process crashes.
         public func setContext(_ context: [String: FlareValue]) throws {
-            let data = try JSONEncoder().encode(context)
-            guard data.count <= 64 * 1024 else { throw FlareCrashReporterError.reportTooLarge }
+            let data = try CrashContext.encode(userContext: context, device: diagnostics())
             recorder.setCustomData(data)
+            userContext = context
+        }
+
+        /// Refreshes the memory snapshot while the process is healthy. Never called by the crash handler.
+        public func refreshDiagnostics() throws {
+            try setContext(userContext)
         }
 
         /// Sends a snapshot of the local queue. Failed uploads remain for a later call or launch.

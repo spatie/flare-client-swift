@@ -2,6 +2,12 @@
 
 All notable changes to `flare-client-swift` will be documented in this file.
 
+## 0.1.1 - 2026-09-08
+
+- Include device model, total RAM and a timestamped estimate of available system memory in device context on Apple platforms.
+- Refresh native crash diagnostics every 30 seconds while the app runs, preserving the last sample across a crash and restart.
+- Keep older reports free of post-restart memory readings. Retain the previous snapshot if a refresh fails.
+
 ## 0.1.0 - 2026-09-08
 
 - Add a Swift 6 reporting client with nonthrowing delivery results, context, breadcrumbs, supplied stack frames, and filtering.

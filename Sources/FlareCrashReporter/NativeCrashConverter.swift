@@ -39,6 +39,7 @@
             if let data = crash.customData {
                 context = (try? JSONDecoder().decode([String: FlareValue].self, from: data)) ?? [:]
             }
+            let capturedDiagnostics = context.removeValue(forKey: CrashContext.diagnosticsKey)
             context["native_crash"] = .object([
                 "signal": .string(signal.name ?? "unknown"),
                 "signal_code": .string(signal.code ?? "unknown"),
@@ -57,6 +58,12 @@
                 "os.type": "darwin",
                 "os.version": .string(system.operatingSystemVersion ?? "unknown"),
             ]
+            // Older reports have no memory snapshot. An explicit device object prevents
+            // the client's fresh, post-restart memory reading from being attributed to that crash.
+            var device: [String: FlareValue] = [:]
+            if case .object(let captured) = capturedDiagnostics { device = captured }
+            if let model = crash.machineInfo?.modelName { device["model"] = .string(model) }
+            attributes["context.device"] = .object(device)
             if let application = crash.applicationInfo {
                 attributes["service.version"] = .string(
                     application.applicationMarketingVersion ?? application.applicationVersion ?? "unknown")

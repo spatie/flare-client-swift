@@ -5,7 +5,7 @@
 
 This repository contains the Swift client to send errors and native crash reports to [Flare](https://flareapp.io). The client can be installed using Swift Package Manager and works with Swift 6.0 and above.
 
-The `Flare` product reports caught errors, context, breadcrumbs, and supplied stack traces. The optional `FlareCrashReporter` product captures native crashes with [PLCrashReporter](https://github.com/microsoft/plcrashreporter) and uploads them on the next launch. Upload failures are returned without throwing into your app's startup.
+The `Flare` product reports caught errors, device and memory diagnostics, context, breadcrumbs, and supplied stack traces. The optional `FlareCrashReporter` product captures native crashes with [PLCrashReporter](https://github.com/microsoft/plcrashreporter) and uploads them on the next launch. Upload failures are returned without throwing into your app's startup.
 
 Supports macOS 12+, iOS 15+, and tvOS 15+. The reporting client also supports Linux. Native frames initially contain binary names and offsets; source-level symbolication requires matching release symbols and is not included.
 

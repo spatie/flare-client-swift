@@ -18,6 +18,12 @@
             #expect(report.grouping == .fullStacktraceAndExceptionClassAndCode)
             #expect(report.context["native_crash"] != nil)
             #expect(report.attributes["os.version"] != nil)
+            guard case .object(let device) = report.attributes["context.device"] else {
+                Issue.record("Expected device context for a legacy native report")
+                return
+            }
+            #expect(device["memory_available_estimate_bytes"] == nil)
+            #expect(device["model"] != nil)
         }
 
         @Test func identifiesAnApplicationLaunchedThroughASymlink() {
@@ -28,6 +34,29 @@
                     processPath: "/project/.build/debug/Demo",
                     processName: "Demo"
                 ) == image)
+        }
+
+        @Test func conversionPreservesTheCapturedMemoryInsteadOfResamplingAfterRestart() throws {
+            let recorder = try #require(
+                PLCrashReporter(configuration: .init(signalHandlerType: .mach, symbolicationStrategy: [])))
+            recorder.customData = try CrashContext.encode(
+                userContext: ["screen": "workspace"],
+                device: [
+                    "memory_total_bytes": 1234, "memory_available_estimate_bytes": 456,
+                    "memory_sampled_at": "before-crash",
+                ]
+            )
+            let data = try recorder.generateLiveReportAndReturnError()
+            let report = try NativeCrashConverter.convert(StoredCrash(id: UUID(), data: data))
+            guard case .object(let device) = report.attributes["context.device"] else {
+                Issue.record("Missing captured diagnostics")
+                return
+            }
+            #expect(device["memory_total_bytes"] == 1234)
+            #expect(device["memory_available_estimate_bytes"] == 456)
+            #expect(device["memory_sampled_at"] == "before-crash")
+            #expect(report.context["screen"] == "workspace")
+            #expect(report.context[CrashContext.diagnosticsKey] == nil)
         }
 
         @Test func ambiguousBasenamesDoNotMisidentifyApplicationFrames() {
