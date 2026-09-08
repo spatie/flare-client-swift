@@ -11,7 +11,7 @@ jobs:
   macos:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
       - run: swift test
       - run: swift build --configuration release
       - run: swift build --package-path Examples/FlareExample
@@ -20,5 +20,5 @@ jobs:
     runs-on: ubuntu-latest
     container: swift:6.0
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
       - run: swift test

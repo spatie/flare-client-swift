@@ -39,37 +39,8 @@
                 "fault_address": .string(hex(signal.address)),
                 "crashed_thread": .integer(Int64(crashedThread.threadNumber)),
                 "symbolicated": false,
-                "binary_images": .array(
-                    images.map { image in
-                        .object([
-                            "name": .string(basename(image.imageName)),
-                            "uuid": image.imageUUID.map(FlareValue.string) ?? .null,
-                            "base_address": .string(hex(image.imageBaseAddress)),
-                            "size": .string(hex(image.imageSize)),
-                            "cpu_type": image.codeType.map { .string(String($0.type)) } ?? .null,
-                            "cpu_subtype": image.codeType.map { .string(String($0.subtype)) } ?? .null,
-                        ])
-                    }),
-                "threads": .array(
-                    threads.map { thread in
-                        let frames = (thread.stackFrames as? [PLCrashReportStackFrameInfo]) ?? []
-                        return .object([
-                            "number": .integer(Int64(thread.threadNumber)),
-                            "crashed": .bool(thread.crashed),
-                            "frames": .array(
-                                frames.map { frame in
-                                    let image = crash.image(forAddress: frame.instructionPointer)
-                                    return .object([
-                                        "instruction_address": .string(hex(frame.instructionPointer)),
-                                        "image": .string(basename(image?.imageName)),
-                                        "image_uuid": image?.imageUUID.map(FlareValue.string) ?? .null,
-                                        "image_offset": image.map {
-                                            .string(hex(frame.instructionPointer &- $0.imageBaseAddress))
-                                        } ?? .null,
-                                    ])
-                                }),
-                        ])
-                    }),
+                "binary_images": .array(images.map(imageContext)),
+                "threads": .array(threads.map { threadContext($0, crash: crash) }),
             ])
 
             let signalName = signal.name ?? "NativeCrash"
@@ -108,6 +79,40 @@
                 occurredAt: timestamp,
                 id: stored.id
             )
+        }
+
+        private static func imageContext(_ image: PLCrashReportBinaryImageInfo) -> FlareValue {
+            .object([
+                "name": .string(basename(image.imageName)),
+                "uuid": image.imageUUID.map(FlareValue.string) ?? .null,
+                "base_address": .string(hex(image.imageBaseAddress)),
+                "size": .string(hex(image.imageSize)),
+                "cpu_type": image.codeType.map { FlareValue.string(String($0.type)) } ?? .null,
+                "cpu_subtype": image.codeType.map { FlareValue.string(String($0.subtype)) } ?? .null,
+            ])
+        }
+
+        private static func threadContext(_ thread: PLCrashReportThreadInfo, crash: PLCrashReport) -> FlareValue {
+            let frames = (thread.stackFrames as? [PLCrashReportStackFrameInfo]) ?? []
+            return .object([
+                "number": .integer(Int64(thread.threadNumber)),
+                "crashed": .bool(thread.crashed),
+                "frames": .array(frames.map { frameContext($0, crash: crash) }),
+            ])
+        }
+
+        private static func frameContext(_ frame: PLCrashReportStackFrameInfo, crash: PLCrashReport) -> FlareValue {
+            let image = crash.image(forAddress: frame.instructionPointer)
+            let offset: FlareValue =
+                image.map {
+                    .string(hex(frame.instructionPointer &- $0.imageBaseAddress))
+                } ?? .null
+            return .object([
+                "instruction_address": .string(hex(frame.instructionPointer)),
+                "image": .string(basename(image?.imageName)),
+                "image_uuid": image?.imageUUID.map(FlareValue.string) ?? .null,
+                "image_offset": offset,
+            ])
         }
 
         private static func basename(_ path: String?) -> String {
